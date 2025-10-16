@@ -324,7 +324,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-white/10 pt-8 text-center">
-            <p className="text-gray-500 text-sm">&copy; 2025 Campus Connect. All rights reserved.</p>
+            <p className="text-gray-500 text-sm">&copy; 2025 Campus Connect. All rights reserved by Rohit.</p>
           </div>
         </div>
       </footer>
