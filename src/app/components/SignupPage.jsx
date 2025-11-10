@@ -1,6 +1,10 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Github, Linkedin, Chrome, CheckCircle, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function AuthPages() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,14 +14,23 @@ export default function AuthPages() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    admissionId: '',
     password: '',
     confirmPassword: '',
-    rememberMe: false,
-    agreeToTerms: false
+    rememberMe: false
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const { status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -31,8 +44,14 @@ export default function AuthPages() {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!isLogin && !formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!isLogin) {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Name is required';
+      }
+      
+      if (!formData.admissionId.trim()) {
+        newErrors.admissionId = 'Admission ID is required';
+      }
     }
     
     if (!formData.email.trim()) {
@@ -53,36 +72,124 @@ export default function AuthPages() {
       } else if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
-      
-      if (!formData.agreeToTerms) {
-        newErrors.agreeToTerms = 'You must agree to the terms and conditions';
-      }
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      setIsSubmitting(true);
+  // Google Sign-In Handler
+  const handleGoogleSignIn = async () => {
+    try {
+      const loadingToast = toast.loading("Signing in with Google...");
       
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setSubmitSuccess(true);
-        
+      const result = await signIn('google', {
+        callbackUrl: '/',
+        redirect: false,
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (result?.error) {
+        toast.error("Google sign in failed. Please try again.");
+      } else if (result?.url) {
+        toast.success("Signed in successfully!");
         setTimeout(() => {
-          setSubmitSuccess(false);
-          setFormData({
-            name: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            rememberMe: false,
-            agreeToTerms: false
-          });
-        }, 2000);
-      }, 1500);
+          router.push(result.url || '/');
+        }, 1500);
+      }
+    } catch (error) {
+      toast.error("Google sign in failed. Please try again.");
+    }
+  };
+
+  // GitHub Sign-In Handler
+  const handleGitHubSignIn = async () => {
+    try {
+      const loadingToast = toast.loading("Signing in with GitHub...");
+      
+      const result = await signIn('github', {
+        callbackUrl: '/',
+        redirect: false,
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (result?.error) {
+        toast.error("GitHub sign in failed. Please try again.");
+      } else if (result?.url) {
+        toast.success("Signed in successfully!");
+        setTimeout(() => {
+          router.push(result.url || '/');
+        }, 1500);
+      }
+    } catch (error) {
+      toast.error("GitHub sign in failed. Please try again.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    const loadingToast = toast.loading(isLogin ? "Signing you in..." : "Creating your account...");
+
+    try {
+      if (isLogin) {
+        // Handle login with NextAuth
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          toast.error("Invalid email or password");
+          toast.dismiss(loadingToast);
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (result?.ok) {
+          toast.dismiss(loadingToast);
+          toast.success("Signed in successfully!");
+          setTimeout(() => {
+            router.push('/');
+          }, 1500);
+        }
+      } else {
+        // Handle registration
+        const response = await axios.post("/api/routes/register", formData);
+        
+        if (response.data.success) {
+          toast.dismiss(loadingToast);
+          toast.success("Account created successfully!");
+          setSubmitSuccess(true);
+          
+          setTimeout(() => {
+            setSubmitSuccess(false);
+            setFormData({
+              name: '',
+              email: '',
+              admissionId: '',
+              password: '',
+              confirmPassword: '',
+              rememberMe: false
+            });
+            setIsLogin(true); // Switch to login mode
+          }, 2000);
+        } else {
+          throw new Error(response.data.message || "Registration failed");
+        }
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error(error.response?.data?.message || error.message || "Something went wrong");
+      setIsSubmitting(false);
     }
   };
 
@@ -110,15 +217,17 @@ export default function AuthPages() {
     setFormData({
       name: '',
       email: '',
+      admissionId: '',
       password: '',
       confirmPassword: '',
-      rememberMe: false,
-      agreeToTerms: false
+      rememberMe: false
     });
   };
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden flex items-center justify-center p-6">
+      <Toaster />
+      
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div 
           className="absolute w-96 h-96 bg-violet-500/20 rounded-full blur-3xl transition-transform duration-1000 ease-out"
@@ -149,7 +258,7 @@ export default function AuthPages() {
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         <div className="hidden lg:block space-y-8">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-14 h-14 bg-linear-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
               <span className="text-white font-bold text-2xl">CC</span>
             </div>
             <span className="text-2xl font-light tracking-wide">Campus Connect</span>
@@ -159,7 +268,7 @@ export default function AuthPages() {
             <h1 className="text-5xl font-light leading-tight">
               Connect with your
               <br />
-              <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 campus community
               </span>
             </h1>
@@ -171,7 +280,7 @@ export default function AuthPages() {
 
           <div className="space-y-4 pt-8">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-violet-500/20">
+              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0 border border-violet-500/20">
                 <CheckCircle className="w-5 h-5 text-violet-400" />
               </div>
               <div>
@@ -181,7 +290,7 @@ export default function AuthPages() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-violet-500/20">
+              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0 border border-violet-500/20">
                 <CheckCircle className="w-5 h-5 text-violet-400" />
               </div>
               <div>
@@ -191,7 +300,7 @@ export default function AuthPages() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-violet-500/20">
+              <div className="w-10 h-10 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0 border border-violet-500/20">
                 <CheckCircle className="w-5 h-5 text-violet-400" />
               </div>
               <div>
@@ -205,7 +314,7 @@ export default function AuthPages() {
         <div className="relative">
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl">
             <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <div className="w-12 h-12 bg-linear-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
                 <span className="text-white font-bold text-xl">CC</span>
               </div>
               <span className="text-xl font-light tracking-wide">Campus Connect</span>
@@ -224,7 +333,7 @@ export default function AuthPages() {
 
             {submitSuccess && (
               <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
                 <p className="text-sm text-green-400">
                   {isLogin ? 'Login successful! Redirecting...' : 'Account created successfully!'}
                 </p>
@@ -232,13 +341,19 @@ export default function AuthPages() {
             )}
 
             <div className="space-y-3 mb-6">
-              <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-3 transition group">
+              <button 
+                onClick={handleGoogleSignIn}
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-3 transition group"
+              >
                 <Chrome className="w-5 h-5 text-gray-300 group-hover:text-white transition" />
                 <span className="text-sm font-medium">Continue with Google</span>
               </button>
               
               <div className="grid grid-cols-2 gap-3">
-                <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition group">
+                <button 
+                  onClick={handleGitHubSignIn}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition group"
+                >
                   <Github className="w-5 h-5 text-gray-300 group-hover:text-white transition" />
                   <span className="text-sm font-medium">GitHub</span>
                 </button>
@@ -259,31 +374,57 @@ export default function AuthPages() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      onKeyPress={handleKeyPress}
-                      placeholder="John Doe"
-                      className={`w-full pl-12 pr-4 py-3 bg-white/5 border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition`}
-                    />
-                  </div>
-                  {errors.name && (
-                    <div className="flex items-center gap-2 mt-2 text-red-400 text-xs">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>{errors.name}</span>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        onKeyPress={handleKeyPress}
+                        placeholder="John Doe"
+                        className={`w-full pl-12 pr-4 py-3 bg-white/5 border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition`}
+                      />
                     </div>
-                  )}
-                </div>
+                    {errors.name && (
+                      <div className="flex items-center gap-2 mt-2 text-red-400 text-xs">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>{errors.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">
+                      Admission ID
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        name="admissionId"
+                        value={formData.admissionId}
+                        onChange={handleInputChange}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter your admission ID"
+                        className={`w-full pl-12 pr-4 py-3 bg-white/5 border ${errors.admissionId ? 'border-red-500/50' : 'border-white/10'} rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition`}
+                      />
+                    </div>
+                    {errors.admissionId && (
+                      <div className="flex items-center gap-2 mt-2 text-red-400 text-xs">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>{errors.admissionId}</span>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               <div>
@@ -386,46 +527,16 @@ export default function AuthPages() {
                     />
                     <span className="text-gray-300">Remember me</span>
                   </label>
-                  <button className="text-violet-400 hover:text-violet-300 transition">
+                  <button type="button" className="text-violet-400 hover:text-violet-300 transition">
                     Forgot password?
                   </button>
                 </div>
               )}
 
-              {!isLogin && (
-                <div>
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      name="agreeToTerms"
-                      checked={formData.agreeToTerms}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 mt-0.5 rounded border-white/10 bg-white/5 text-violet-500 focus:ring-violet-500 focus:ring-offset-0" 
-                    />
-                    <span className="text-sm text-gray-300">
-                      I agree to the{' '}
-                      <button className="text-violet-400 hover:text-violet-300 transition">
-                        Terms of Service
-                      </button>{' '}
-                      and{' '}
-                      <button className="text-violet-400 hover:text-violet-300 transition">
-                        Privacy Policy
-                      </button>
-                    </span>
-                  </label>
-                  {errors.agreeToTerms && (
-                    <div className="flex items-center gap-2 mt-2 text-red-400 text-xs">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>{errors.agreeToTerms}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
               <button
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-violet-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-violet-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-violet-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
@@ -439,7 +550,7 @@ export default function AuthPages() {
                   </>
                 )}
               </button>
-            </div>
+            </form>
 
             <div className="mt-6 text-center text-sm text-gray-400">
               {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
@@ -452,8 +563,8 @@ export default function AuthPages() {
             </div>
           </div>
 
-          <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-full blur-2xl"></div>
-          <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-2xl"></div>
+          <div className="absolute -top-4 -right-4 w-20 h-20 bg-linear-to-br from-violet-500/20 to-purple-500/20 rounded-full blur-2xl"></div>
+          <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-linear-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-2xl"></div>
         </div>
       </div>
     </div>

@@ -96,7 +96,7 @@ export default function GalleryPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <div className="w-11 h-11 bg-linear-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
                 <span className="text-white font-bold text-lg">CC</span>
               </div>
               <span className="text-xl font-light tracking-wide">Campus Connect</span>
@@ -112,7 +112,7 @@ export default function GalleryPage() {
               <a href="/communities" className="text-gray-300 hover:text-white transition-colors text-sm font-light">Communities</a>
               <a href="/signin" className="group relative px-6 py-2.5 bg-white text-black rounded-full text-sm font-medium overflow-hidden">
                 <span className="relative z-10">Sign In</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-linear-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
               </a>
             </div>
 
@@ -140,14 +140,14 @@ export default function GalleryPage() {
       {/* Hero Section */}
       <section className="relative min-h-[60vh] flex items-center justify-center px-6 pt-32 pb-20">
         <div className="max-w-5xl mx-auto text-center space-y-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center mb-6">
+          <div className="w-20 h-20 bg-linear-to-br from-violet-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center mb-6">
             <Image className="w-10 h-10" />
           </div>
           
           <h1 className="text-6xl md:text-7xl font-light tracking-tight">
             Campus
             <br />
-            <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               Gallery
             </span>
           </h1>
@@ -174,14 +174,14 @@ export default function GalleryPage() {
             </div>
 
             <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
+              <Filter className="w-5 h-5 text-gray-400 shrink-0" />
               {categories.map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2 rounded-xl font-medium transition whitespace-nowrap text-sm ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white'
+                      ? 'bg-linear-to-r from-violet-500 to-purple-600 text-white'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
                   }`}
                 >
@@ -215,7 +215,7 @@ export default function GalleryPage() {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
                   <h3 className="font-light text-lg mb-1">{image.title}</h3>
                   <p className="text-sm text-gray-300 mb-3">{image.date}</p>
@@ -230,7 +230,7 @@ export default function GalleryPage() {
 
         {filteredImages.length === 0 && (
           <div className="text-center py-20">
-            <div className="w-20 h-20 bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-2xl mx-auto mb-6 flex items-center justify-center border border-white/10">
+            <div className="w-20 h-20 bg-linear-to-br from-violet-500/20 to-purple-600/20 rounded-2xl mx-auto mb-6 flex items-center justify-center border border-white/10">
               <Image className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-2xl font-light text-white mb-3">No images found</h3>
@@ -286,7 +286,7 @@ export default function GalleryPage() {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-linear-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold">CC</span>
                 </div>
                 <span className="text-lg font-light">Campus Connect</span>
