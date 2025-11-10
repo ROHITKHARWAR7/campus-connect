@@ -3,6 +3,7 @@ import SignupPage from '../components/SignupPage';
 function Page() {
  return (
           <SignupPage />
+          
   )
  }
 
