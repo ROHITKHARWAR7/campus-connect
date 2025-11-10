@@ -639,10 +639,10 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-white/10 pt-8 text-center">
-            <p className="text-gray-500 text-sm">&copy; 2025 Campus Connect. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+            <p className="text-gray-500 text-sm">
+  &copy; 2025 Campus Connect. All rights reserved.
+  <br />
+  <span className="text-gray-400">
+    Built with 💖 <br /> Built by <span className="text-white font-medium">Rohit</span>
+  </span>
+</p>
