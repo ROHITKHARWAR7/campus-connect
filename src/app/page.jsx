@@ -646,3 +646,6 @@ export default function LandingPage() {
     Built with 💖 <br /> Built by <span className="text-white font-medium">Rohit</span>
   </span>
 </p>
+          </div>
+        </div>
+      </footer> 
